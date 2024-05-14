@@ -1,5 +1,0 @@
-mido 
-python-rtmidi
-pygame
-pydub
-pyfluidsynth

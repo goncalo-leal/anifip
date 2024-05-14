@@ -1,0 +1,5 @@
+mido
+pygame
+fluidsynth
+pyfluidsynth
+paho-mqtt

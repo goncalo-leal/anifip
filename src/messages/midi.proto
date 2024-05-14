@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package midi;
+
+/**
+ * Message with a midi file in base 64,
+ * the timestamp of the sender, and the 
+ * ntp offset of the sender. 
+ */
+message InitMessage {
+    string midiFile = 1;
+    float timestamp = 2;
+    float ntpOffset = 3;
+}
