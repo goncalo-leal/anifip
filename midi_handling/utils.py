@@ -9,6 +9,14 @@ import time
 
 pressed_notes = set()
 
+    # Initialize FluidSynth
+fs = fluidsynth.Synth()
+fs.start()
+
+# Load soundfont
+sfid = fs.sfload('Essential Keys-sforzando-v9.6.sf2')
+fs.program_select(0, sfid, 0, 0)
+
 
 # Convert note on messages with velocity 0 to note off messages,
 # in order to support various MIDI devices 
@@ -42,46 +50,28 @@ def send_msg(msg, action):
     print(msg_to_json(msg))
 
 
-def convert_midi_to_audio(midi_buffer, soundfont_path='Essential Keys-sforzando-v9.6.sf2'):
-    # Initialize FluidSynth
-    fs = fluidsynth.Synth()
-    fs.start()
+def convert_midi_to_audio(midi_buffer):
+    global fs
 
-    # Load soundfont
-    sfid = fs.sfload(soundfont_path)
-    fs.program_select(0, sfid, 0, 0)
-
-    audio_samples = []
-
-    # Sort MIDI messages by timestamp
-    midi_buffer.sort(key=lambda x: x[1])
+    print("Converting MIDI to audio...")
 
     # Initialize start time
-    start_time = time.time()
+    #start_time = time.time()
 
     # Iterate over MIDI messages in the buffer and synthesize audio
-    for msg, timestamp in midi_buffer:
-        # Calculate time to wait before processing the message
-        wait_time = timestamp - start_time
+    for msg in midi_buffer:
+        # Calculate the time to wait before processing the message
+        wait_time = msg.time
         if wait_time > 0:
             time.sleep(wait_time)
-        start_time = timestamp
-        
+
+        # Process the message
         if msg.type == 'note_on':
             fs.noteon(0, msg.note, msg.velocity)
         elif msg.type == 'note_off':
             fs.noteoff(0, msg.note)
-        
-        # Get audio samples from the synthesizer
-        audio = fs.get_samples()
-        audio_samples.append(audio)
-        
-    # Concatenate audio samples into a single numpy array
-    audio_data = np.concatenate(audio_samples)
 
     fs.delete()
-    
-    return audio_data
 
 def convert_audio_to_base64(audio_data):
     try:

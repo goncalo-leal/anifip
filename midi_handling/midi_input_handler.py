@@ -4,6 +4,7 @@ from utils import *
 from Actions import *
 import threading
 import time
+import pygame
 
 command_mode = False
 action = None
@@ -12,23 +13,41 @@ velocity = None
 msg_type = None
 chord_pressed = False
 
-# Function to process MIDI messages and convert them to audio
-def process_midi_to_audio():
-    global midi_buffer
-    while True:
-        # Wait for 2 seconds
-        time.sleep(1)
-        if midi_buffer:
-            print("MIDI buffer:", midi_buffer)
-            audio_stream = convert_midi_to_audio(midi_buffer)
-            print("Audio stream:", audio_stream)
-            #TODO: evaluate the audio stream in order to create metadata that will
-            #be sent in a JSON format
 
-            # Convert audio stream to base64
-            #encoded_audio = convert_audio_to_base64(audio_stream)
-            #print("Base64 encoded audio:", encoded_audio)
-            midi_buffer = []
+
+def play_midi_file(midi_file="Vivaldi Winter (Allegro).mid", chunk_size=256):
+    print("Playing MIDI file:", midi_file)
+    # Initialize Pygame
+    pygame.init()
+    pygame.mixer.init()
+
+    try:
+        # Load MIDI file
+        pygame.mixer.music.load(midi_file)
+
+        # Play the MIDI file
+        pygame.mixer.music.play()
+
+        # Wait until music has finished playing
+        while pygame.mixer.music.get_busy():
+            pygame.time.wait(100)
+
+    except pygame.error as e:
+        print("Error occurred while playing MIDI:", e)
+    finally:
+        # Clean up Pygame
+        pygame.mixer.quit()
+        pygame.quit()
+
+# create thread to print track
+def print_track_messages(track):
+    print('Track {}: {}'.format(i, track.name))
+    print('Track : ', track)
+    for msg in track:
+        print(msg)
+        time.sleep(msg.time)
+    
+
 
 # List available MIDI input ports
 print("Available MIDI input ports:")
@@ -45,9 +64,32 @@ input_port = mido.open_input(input_port_name, backend='alsa')
 midi_buffer = []
 
 # Start the thread for processing MIDI messages
-midi_thread = threading.Thread(target=process_midi_to_audio)
+midi_thread = threading.Thread(target=play_midi_file)
 midi_thread.daemon = True
 midi_thread.start()
+
+#open midi track
+midi_file = "Vivaldi Winter (Allegro).mid"
+
+
+#separate threads per instrument of the midi file
+mid = mido.MidiFile(midi_file)
+
+# Create a thread for each track to print the messages
+threads = []
+midi_thread = threading.Thread(target=play_midi_file)
+midi_thread.daemon = True
+midi_thread.start()
+
+for i, track in enumerate(mid.tracks):
+    thread = threading.Thread(target=print_track_messages, args=(track,))
+    thread.start()
+    threads.append(thread)
+
+# Wait for all threads to finish
+for thread in threads:
+    thread.join()
+
 
 # Receive and print MIDI messages
 for message in input_port:
@@ -63,22 +105,18 @@ for message in input_port:
         break
 
     if message.type is 'note_on':
-        #print all atributtes of the message
-        print(message)
         msg = check_msg_type(message)
         note = msg.note
         velocity = msg.velocity
         msg_type = msg.type
-            # Store the timestamp along with the MIDI message
-        timestamp = time.time()
-        midi_buffer.append((msg, timestamp))
         # Change the action based on the received message
         if command_mode and msg_type == 'note_on':
             # Perform a specific action when a note-on message is received in command mode
             if note == 60:
                 action = Actions.LED_BLINK_WITH_INPUT
+                print("Action:", action)
 
+        
         # Print the received message
         print(msg_to_str(msg))
-        # Dump Json with the message
-        send_msg(msg, action)
+
