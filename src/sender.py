@@ -52,7 +52,9 @@ log.info("NTP Offset: %s", midi_message.ntpOffset)
 
 log.info("MIDI file sent")
 
-time.sleep(20)
+# TODO: Send the MIDI file to the worker nodes
+# TODO: Wait for the worker nodes to receive the MIDI file and are ready to play it
+# TODO: Send the play command to the worker nodes (with timestamp and ntp offset for synchronization)
 
 # Start the thread for printing the MIDI file
 print_thread = threading.Thread(target=midi.print_midi_file, args=(f"../midi_files/{config.MIDI_FILE}",))

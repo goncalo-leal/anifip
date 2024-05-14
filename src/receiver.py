@@ -4,8 +4,6 @@ Receive mqtt messages encoded in protobuf format and deserialize them.
 
 import base64
 import random
-import threading
-import time
 from paho.mqtt import client as mqtt
 
 import messages.midi_pb2 as midi_pb2
