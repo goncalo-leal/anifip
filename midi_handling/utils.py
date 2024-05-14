@@ -14,7 +14,7 @@ pressed_notes = set()
 # in order to support various MIDI devices 
 def check_msg_type(msg):
         if msg.velocity == 0 and msg.type == 'note_on':
-            return mido.Message('note_off', note=msg.note, velocity=0)
+            return mido.Message('note_off', note=msg.note, velocity=0, time=msg.time)
         else:
             return msg
 
@@ -43,7 +43,7 @@ def send_msg(msg, action):
 
 
 def convert_midi_to_audio(midi_buffer, soundfont_path='Essential Keys-sforzando-v9.6.sf2'):
-    # Initialize fluidsynth
+    # Initialize FluidSynth
     fs = fluidsynth.Synth()
     fs.start()
 
@@ -53,13 +53,25 @@ def convert_midi_to_audio(midi_buffer, soundfont_path='Essential Keys-sforzando-
 
     audio_samples = []
 
+    # Sort MIDI messages by timestamp
+    midi_buffer.sort(key=lambda x: x[1])
+
+    # Initialize start time
+    start_time = time.time()
+
     # Iterate over MIDI messages in the buffer and synthesize audio
-    for msg in midi_buffer:
+    for msg, timestamp in midi_buffer:
+        # Calculate time to wait before processing the message
+        wait_time = timestamp - start_time
+        if wait_time > 0:
+            time.sleep(wait_time)
+        start_time = timestamp
+        
         if msg.type == 'note_on':
             fs.noteon(0, msg.note, msg.velocity)
         elif msg.type == 'note_off':
             fs.noteoff(0, msg.note)
-        time.sleep(msg.time)  # Sleep based on the time between messages
+        
         # Get audio samples from the synthesizer
         audio = fs.get_samples()
         audio_samples.append(audio)
