@@ -28,6 +28,10 @@ client.connect(config.MQTT_BROKER, config.MQTT_PORT)
 # Subscribe to the MIDI topic
 client.subscribe(config.TOPIC_MIDI)
 
+#TODO: Set action as enum, and change it based on the message received
+# Current Action 
+action = "LED_BLINK_WITH_BASS"
+
 # Callback for when a message is received
 def on_message(client, userdata, message):
     print(message.payload)
@@ -57,7 +61,8 @@ def on_message(client, userdata, message):
 
     print ("MIDI file received")
 
-    midi.play_midi_file(f"midi_files/{config.MIDI_FILE}")
+    #midi.print_midi_file(f"midi_files/{config.MIDI_FILE}")
+    midi.execute_by_midi_file(action, f"midi_files/{config.MIDI_FILE}")
 
 # Set the callback for when a message is received
 client.on_message = on_message

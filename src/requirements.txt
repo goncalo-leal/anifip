@@ -3,3 +3,4 @@ pygame
 fluidsynth
 pyfluidsynth
 paho-mqtt
+protobuf

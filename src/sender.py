@@ -34,6 +34,7 @@ client.loop_start()
 with open(f"../midi_files/{config.MIDI_FILE}", "rb") as file:
     midi_data = file.read()
 
+
 # Create a MIDI message with the MIDI file encoded in base64, timestamp and the ntp offset
 midi_message = midi_pb2.InitMessage()
 midi_message.midiFile = base64.b64encode(midi_data)
@@ -57,12 +58,12 @@ log.info("MIDI file sent")
 # TODO: Send the play command to the worker nodes (with timestamp and ntp offset for synchronization)
 
 # Start the thread for printing the MIDI file
-print_thread = threading.Thread(target=midi.print_midi_file, args=(f"../midi_files/{config.MIDI_FILE}",))
-print_thread.daemon = True
-print_thread.start()
+# print_thread = threading.Thread(target=midi.print_midi_file, args=(f"../midi_files/{config.MIDI_FILE}",))
+# print_thread.daemon = True
+# print_thread.start()
 
 # Start the thread for playing the MIDI file
-play_thread = threading.Thread(target=midi.play_midi_file, args=(f"../midi_files/{config.MIDI_FILE}",))
+play_thread = threading.Thread(target=midi.play_midi_file, args=(f"midi_files/{config.MIDI_FILE}",))
 play_thread.daemon = True
 play_thread.start()
 
@@ -76,6 +77,6 @@ read_thread.start()
 # TODO: Stay alive to keep sending commands
 
 # Wait for the threads to finish
-print_thread.join()
+#print_thread.join()
 play_thread.join()
 read_thread.join()

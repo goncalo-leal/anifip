@@ -1,4 +1,5 @@
 import threading
+import time
 import mido
 import pygame
 
@@ -41,6 +42,29 @@ def play_midi_file(midi_file="Vivaldi Winter (Allegro).mid", chunk_size=256):
         pygame.mixer.quit()
         pygame.quit()
 
+# If it is a note on message on low register, blink the LED
+def led_blink_with_bass(track):
+    #create a new MIDI file with the track
+    mid = mido.MidiFile()
+    mid.tracks.append(track)
+
+    i = 0  # Initialize the counter
+    for msg in :
+        # Check if the message is a note on message
+        if msg.type == 'note_on' and track.name == 'Grand Piano (Classic)':
+            # Check if the message is in the low register
+            if msg.note < 60:
+                i += 1  # Increment the counter
+                print("LED Blinking " + track.name)
+                print(f"Note: {msg.note}, Velocity: {msg.velocity}")
+
+
+# Execute actions based on the current action value
+def execute_action(track, action, midi_file="midi_files/Vivaldi Winter (Allegro).mid"):
+    # Check if the action is LED_BLINK_WITH_INPUT
+    if action == "LED_BLINK_WITH_BASS":
+        led_blink_with_bass(track)
+
 # Print messages of each track
 def print_track_messages(track):
     get_logger().info(f'Track: {track.name}')
@@ -71,6 +95,24 @@ def print_midi_file(midi_file="Vivaldi Winter (Allegro).mid"):
     # Wait for all threads to finish
     for thread in threads:
         thread.join()
+
+
+
+# Function to call the execute_action function for each track
+def execute_by_midi_file(action,  midi_file="Vivaldi Winter (Allegro).mid"):
+
+    # Load MIDI file
+    mid = mido.MidiFile(midi_file)
+
+    threads = []
+    for i, track in enumerate(mid.tracks):
+        thread = threading.Thread(target=execute_action, args=(track,action))
+        thread.start()
+        threads.append(thread)
+
+    # Wait for all threads to finish
+    # for thread in threads:
+    #     thread.join()
 
 # Get midi input port
 def get_input_port():
