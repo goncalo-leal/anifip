@@ -17,3 +17,10 @@ MQTT_PORT = 1883
 # Topics
 TOPIC_MIDI = "midi"
 TOPIC_SERVICE_DISCOVERY = "service_discovery"
+
+# MIDI Thresholds
+BASS_THRESHOLD = 55
+TREBLE_THRESHOLD = 70
+
+#Raspberry Pi
+LED_PIN = 17

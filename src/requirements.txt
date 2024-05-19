@@ -4,3 +4,4 @@ fluidsynth
 pyfluidsynth
 paho-mqtt
 protobuf
+RPi.GPIO 
