@@ -49,7 +49,7 @@ def led_blink_with_bass(track):
     mid.tracks.append(track)
 
     i = 0  # Initialize the counter
-    for msg in :
+    for msg in mid.play():
         # Check if the message is a note on message
         if msg.type == 'note_on' and track.name == 'Grand Piano (Classic)':
             # Check if the message is in the low register
