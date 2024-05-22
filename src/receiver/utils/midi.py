@@ -1,8 +1,19 @@
 import threading
+import time
 import mido
+import traceback
 import pygame
-
+import RPi.GPIO as GPIO
+from utils import config
 from utils import get_logger
+
+
+current_action = config.START_ACTION
+
+# Set up GPIO
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(config.LED_PIN1, GPIO.OUT)
+GPIO.setup(config.LED_PIN2, GPIO.OUT)  # Set LED 2 pin as output
 
 # Convert a MIDI message to a string
 def msg_to_str(msg):
@@ -15,31 +26,76 @@ def check_msg_type(msg):
             return mido.Message('note_off', note=msg.note, velocity=0, time=msg.time)
         else:
             return msg
+        
+def set_current_action(new_current_action):
+    global current_action
+    current_action = new_current_action
 
-# Play MIDI file
-def play_midi_file(midi_file="Vivaldi Winter (Allegro).mid", chunk_size=256):
-    # msg_queue.put(f"Playing MIDI file: {midi_file}")
-    # Initialize Pygame
-    pygame.init()
-    pygame.mixer.init()
+# Function to initialize GPIO
+def initialize_gpio():
+    GPIO.setmode(GPIO.BCM)  # or GPIO.BOARD depending on your pin numbering preference
+    GPIO.setup(config.LED_PIN1, GPIO.OUT)
+    GPIO.setup(config.LED_PIN2, GPIO.OUT)  # Set LED 2 pin as output
+
+# Function to clean up GPIO
+def cleanup_gpio():
+    GPIO.cleanup()
+
+# Function to turn on an LED
+def turn_on_led(pin):
+    GPIO.output(pin, GPIO.HIGH)  # Set the pin to HIGH to turn on the LED
+
+# Function to turn off an LED
+def turn_off_led(pin):
+    GPIO.output(pin, GPIO.LOW)  # Set the pin to LOW to turn off the LED
+
+
+def execute_action(midi_file, stop_event):
+    global current_action
+    cleanup_gpio()  # Ensure GPIO is cleaned up after execution
+    initialize_gpio()  # Ensure GPIO is initialized
 
     try:
-        # Load MIDI file
-        pygame.mixer.music.load(midi_file)
+        mid = mido.MidiFile(midi_file)
 
-        # Play the MIDI file
-        pygame.mixer.music.play()
+        for i, track in enumerate(mid.tracks):
+            channels = set ()
+            for msg in track:
+                if msg.type in ['note_on', 'note_off']:
+                    channels.add(msg.channel)
+            channels_list = ', '.join(str(channel) for channel in channels)
+            print(f"Track{i} ({track.name}): Channels {channels_list}")
 
-        # Wait until music has finished playing
-        while pygame.mixer.music.get_busy():
-            pygame.time.wait(100)
 
-    except pygame.error as e:
-        get_logger().error(f"Error occurred while playing MIDI: {e}")
-    finally:
-        # Clean up Pygame
-        pygame.mixer.quit()
-        pygame.quit()
+        for msg in mid.play():
+            if stop_event.is_set():
+                turn_off_led(config.LED_PIN1)
+                break
+
+            if current_action == "LED_BLINK_WITH_BASS":
+                if msg.type == 'note_on' and msg.velocity != 0 and msg.channel == 1:
+                    #if msg.note < config.BASS_THRESHOLD:
+                    print(f"LED_BLINK_WITH_BASS: LED Blinking for note {msg.note}")
+                    turn_on_led(config.LED_PIN1)
+                        
+                elif (msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0) and msg.channel == 1):
+                    print(f"LED_BLINK_WITH_BASS: LED Turning off for note {msg.note}")
+                    turn_off_led(config.LED_PIN1)
+
+            elif current_action == "LED_BLINK_WITH_BASS_X2":
+                if msg.type == 'note_on' and msg.velocity != 0:
+                    if msg.note < config.BASS_THRESHOLD:
+                        print(f"LED_BLINK_WITH_BASS_X2: LED Blinking for note {msg.note}")
+                        turn_on_led(config.LED_PIN1)
+
+                elif (msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0)):
+                    if msg.note < config.BASS_THRESHOLD:
+                        print(f"LED_BLINK_WITH_BASS_X2: LED Turning off for note {msg.note}")
+                        turn_off_led(config.LED_PIN1)
+    except Exception as e:
+        print(f"Error occurred while loading MIDI file: {e}")
+
+
 
 # Print messages of each track
 def print_track_messages(track):
@@ -57,7 +113,7 @@ def print_track_messages(track):
     get_logger().info(f"End of track: {track.name}")
 
 # Function to call the print_track_messages function for each track
-def print_midi_file(midi_file="Vivaldi Winter (Allegro).mid"):
+def print_midi_file(midi_file):
     # Load MIDI file
     mid = mido.MidiFile(midi_file)
 
@@ -71,6 +127,8 @@ def print_midi_file(midi_file="Vivaldi Winter (Allegro).mid"):
     # Wait for all threads to finish
     for thread in threads:
         thread.join()
+
+
 
 # Get midi input port
 def get_input_port():
