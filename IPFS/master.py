@@ -2,9 +2,8 @@ import requests
 import argparse
 import json
 
-def upload_file(file_path):
-    files = {'file': open(file_path, 'rb')}
-    response = requests.post('http://localhost:5001/api/v0/add', files=files)
+def upload_file(midi_file):
+    response = requests.post('http://localhost:5001/api/v0/add', files=midi_file)
     res_json = json.loads(response.text)
     print(f"File added with CID: {res_json['Hash']}")
     return res_json['Hash']
