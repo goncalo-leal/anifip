@@ -105,7 +105,7 @@ def broadcast_change_music_msg(control_type, data):
            "data": data
     }
 
-    sent_messages[uid] = [msg.config.MQTT_NR_OF_NODES]
+    sent_messages[uid] = [msg, config.MQTT_NR_OF_NODES]
     
     return msg
 
@@ -125,13 +125,16 @@ def ack_msg(slave_id, sqc_number):
 
 #this function will receive the message and check if it is an ack message and if it is the correct ack message
 def ack_checker(message):
-    print
+    ret = False
     if message.get("type") == "ACK":
         if message.get("sequence_number") in sent_messages.keys():
-            if sent_messages[message.get("sequence_number")][1] > 0:
-                sent_messages[message.get("sequence_number")][1] -= 1
-            if sent_messages[message.get("sequence_number")][1] == 0:
+            if len(sent_messages[message.get("sequence_number")]) == 2:
+                sent_messages[message.get("sequence_number")].append(set())
+            
+            sent_messages[message.get("sequence_number")][2].add(message.get("slave_id"))
+
+            if len(sent_messages[message.get("sequence_number")][2]) == config.MQTT_NR_OF_NODES:
+                ret = True
                 del sent_messages[message.get("sequence_number")]
-            return True
-    return False
+    return ret
         

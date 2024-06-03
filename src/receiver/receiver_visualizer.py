@@ -9,7 +9,7 @@ import os
 
 # Import the logger and configuration from the utils package
 from utils import get_logger
-from utils import config
+from utils import config_visualizer as config
 from utils import midi_pc
 from utils import messages
 
@@ -37,15 +37,15 @@ stop_event = threading.Event()
 def delayed_action(delay, action):
     global stop_event
     start_time = time.time()
-
-    print(stop_event.is_set())
+    
     while time.time() - start_time < delay:
         if stop_event.is_set():
             return
         time.sleep(0.1)
     
     if not stop_event.is_set():
-        midi_pc.play_midi_file(stop_event,midi_file_path)  # Execute the action (play the MIDI file)
+        time.sleep(0.20)
+        midi_pc.play_midi_visualizer(stop_event, midi_file_path)  # Execute the action (play the MIDI file)
 
 # Ensure the midi_files directory exists
 try:
@@ -86,8 +86,6 @@ def on_message(client, userdata, message):
             # Clear the stop event for the new thread
             stop_event.clear()
             # Create a new playback thread
-
-
             playback_thread = threading.Thread(target=delayed_action, args=(delay, midi_pc.current_action))
             playback_thread.start()
         else:

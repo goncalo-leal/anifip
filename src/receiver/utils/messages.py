@@ -6,8 +6,8 @@ import json
 import time
 import uuid
 from utils import ipfs_functions
-from utils import config
-from utils import midi
+from utils import config_visualizer as config
+from utils import midi_pc as midi
 import ntplib
 
 
@@ -36,7 +36,7 @@ def ack_msg(slave_id, sqc_number):
     return msg
 
 
-def process(message):
+def process(message, slave_id):
     msg_type = message.get("type")
     ack_msg = None
 
@@ -47,7 +47,7 @@ def process(message):
             res = ipfs_functions.download_file(data_cid, f"midi_files/{config.MIDI_FILE}")
             
             if res:
-                ack_msg = create_ack_message(message.get("sequence_number"), config.SLAVE_ID)
+                ack_msg = create_ack_message(message.get("sequence_number"), slave_id)
                 print ("MIDI file received")
                 return ack_msg,None
             else:
@@ -59,7 +59,7 @@ def process(message):
                 midi.set_current_action(message.get("action"))
                 print("current")
 
-            ack_msg = create_ack_message(message.get("sequence_number"),config.SLAVE_ID)
+            ack_msg = create_ack_message(message.get("sequence_number"),slave_id)
             print("ignorado")
             return ack_msg,None 
         
@@ -77,7 +77,7 @@ def process(message):
                         if delay >= 0:
                             print(f"Delaying execution for {delay} seconds to synchronize")
                             # After delay, acknowledge synchronization
-                        ack_msg = create_ack_message(message.get("sequence_number"), config.SLAVE_ID)
+                        ack_msg = create_ack_message(message.get("sequence_number"), slave_id)
                         return ack_msg,delay
         case "ACK":
             print("ACK")
