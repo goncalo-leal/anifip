@@ -11,36 +11,6 @@ from mqtt_client import client, mqtt, ack_event
 import os
 from pygame.locals import *
 
-# Set up GPIO
-# GPIO.setmode(GPIO.BCM)
-# GPIO.setup({config.LED}, GPIO.OUT)
-# pwm = GPIO.PWM(config.LED, 100)
-# pwm.start(0)
-
-
-# # Terminal size
-# TERMINAL_WIDTH = 140
-# TERMINAL_HEIGHT = 40
-
-# # Map MIDI note numbers to terminal rows
-# def note_to_row(note):
-#     return TERMINAL_HEIGHT - (note % TERMINAL_HEIGHT) - 1
-
-# # Clear the terminal screen
-# def clear_screen():
-#     os.system('cls' if os.name == 'nt' else 'clear')
-
-# # Print the current state of the terminal visualizer
-# def print_screen(notes):
-#     clear_screen()
-#     screen = [[' ' for _ in range(TERMINAL_WIDTH)] for _ in range(TERMINAL_HEIGHT)]
-
-#     for note, velocity, col in notes:
-#         row = note_to_row(note)
-#         screen[row][col % TERMINAL_WIDTH] = '*'
-
-#     for row in screen:
-#         print(''.join(row))
 
 # Convert a MIDI message to a string
 def msg_to_str(msg):
@@ -127,30 +97,6 @@ def print_track_messages(track):
     print_log_message("info", f"End of track: {track.name}")
 
 
-# # Visualize MIDI file in terminal
-# def visualize_midi_file(midi_file="../midi_files/Vivaldi Winter (Allegro).mid"):
-#     try:
-#         mid = mido.MidiFile(midi_file)
-#         start_time = time.time()
-#         notes = []
-
-#         for msg in mid.play():
-#             elapsed_time = time.time() - start_time
-
-#             if msg.type == 'note_on' and msg.velocity > 0:
-#                 col = int(elapsed_time * 10)  # Move right over time
-#                 notes.append((msg.note, msg.velocity, col))
-
-#             # Update screen
-#             print_screen(notes)
-
-#             # Remove old notes
-#             notes = [(note, velocity, col) for note, velocity, col in notes if col < TERMINAL_WIDTH]
-
-#             time.sleep(0.05)  # Control the refresh rate
-
-#     except Exception as e:
-#         print(f"Error occurred while visualizing MIDI: {e}")
 
 # Function to call the print_track_messages function for each track
 def print_midi_file(midi_file="../midi_files/Vivaldi Winter (Allegro).mid"):
@@ -211,6 +157,7 @@ def send_message_and_wait_for_ack(message, topic):
     except Exception as e:
         print_log_message("error", f"Error publishing message: {e}")
         raise
+
 
 
 

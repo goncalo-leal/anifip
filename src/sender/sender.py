@@ -13,23 +13,31 @@ def wait_for_init_ack_and_start_threads(midi_file_path):
 # Connect to the MQTT broker
 connect()
 
-valid_action_keys = [60, 62]
+valid_action_keys = [60, 62, 64, 65 ,67 ,69]
 
 # Load the MIDI file with error handling
-midi_file_path = os.path.join("..", "midi_files", config.MIDI_FILE)
-print(midi_file_path)
-try:
-    with open(midi_file_path, "rb") as file:
-        midi_data = file.read()
-except FileNotFoundError:
-    print_log_message("error", f"MIDI file not found: {midi_file_path}")
-    raise
-except Exception as e:
-    print_log_message("error", f"Error reading MIDI file: {e}")
-    raise
+midi_files_path = os.path.join("..", "midi_files")
+print(midi_files_path)
+
+l_files = os.listdir(midi_files_path)
+l_path = []
+
+print(l_files)
+
+for file in l_files:
+    file_path = f'{midi_files_path}/{file}'
+
+    l_path.append(file_path)
+
+
+for entry in l_path:
+
+    print(entry)
+
+counter = 0
 
 # Create the JSON Message
-broadcast_data_msg_dict = messages.create_message("BROADCAST_DATA", data=midi_file_path)
+broadcast_data_msg_dict = messages.create_message("BROADCAST_DATA", data=l_path[counter])
 broadcast_data_msg = json.dumps(broadcast_data_msg_dict)
 
 # Publish the MIDI message with error handling
@@ -44,18 +52,20 @@ except Exception as e:
 print_log_message("info", "MIDI file sent")
 
 # Thread to wait for ACK init and start print and play threads
-wait_thread = threading.Thread(target=wait_for_init_ack_and_start_threads, args=(midi_file_path,))
+wait_thread = threading.Thread(target=wait_for_init_ack_and_start_threads, args=(l_path[counter],))
 wait_thread.daemon = True
 wait_thread.start()
 
 input_port = midi.get_input_port()
 
 def read_midi_messages(input_port, command_mode=False):
+    global counter, l_path
     last_control_message = None
     debounce_time = 0.2  # 200 ms debounce time
-    midi_file_path2 = os.path.join("..", "midi_files", config.MIDI_FILE2)
+
 
     while True:
+
         message = input_port.receive()
         if message.type == 'clock':
             continue
@@ -91,10 +101,15 @@ def read_midi_messages(input_port, command_mode=False):
                     except Exception as e:
                         print("Error publishing MIDI message: %s", e)
                         raise
-
-                if message.control == 103 and message.value != 0:
+                
+                if message.control == 103 or message.control == 102 and message.value != 0:
+                    print(l_path)
+                    counter = counter + 1 if message.control == 103 else counter -1 
+                
+                    midi_file_path = l_path[counter % len(l_path)]
                     ack_event.clear()
-                    upload_new_music_msg_dict = messages.create_message("BROADCAST_DATA", data=midi_file_path2)
+                    upload_new_music_msg_dict = messages.create_message("BROADCAST_DATA", data=midi_file_path)
+                    print(midi_file_path)
                     upload_new_music_msg = json.dumps(upload_new_music_msg_dict)
 
                     try:
@@ -133,6 +148,18 @@ def read_midi_messages(input_port, command_mode=False):
                 if message.note == 62:
                     ack_event.clear()
                     action = "LED_BLINK_WITH_BASS_X2"
+                if message.note == 64:
+                    ack_event.clear()
+                    action = "CHANGE_COLOR_RED"
+                if message.note == 65:
+                    ack_event.clear()
+                    action = "CHANGE_COLOR_BLUE"
+                if message.note == 67:
+                    ack_event.clear()   
+                    action = "CHANGE_COLOR_GREEN"
+                if message.note == 69:
+                    ack_event.clear()
+                    action = "CHANGE_COLOR_RANDOM"
                 if message.note in valid_action_keys:
                     msg = json.dumps(messages.create_message("ACTION", action, slave_type="LED"))
                     try:
